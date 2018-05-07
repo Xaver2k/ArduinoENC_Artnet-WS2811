@@ -1,5 +1,5 @@
-# Artnet-WS2811_Nano
-### This Project is using an Arduino Nano to receive Artnet Data and drive WS2811/WS2812 Digital Leds. This Project was started in January 2017 and is constantly evolving.
+# ArduinoENC_Artnet-WS2811
+### This Project is using an Arduino Nano to receive Artnet Data and drive WS2811/WS2812 Digital Leds. This Project was started in January 2017, it is working and still in development.
 
 The Arduino is in Charge of reading Artnet Packets received by an ENC28J60 Ethernet Shield, prepare the data and output the WS2811 Protocol by using the Adafruit Neopixel library via normal I/O-Pins. For my Installation i added a Screw Terminal Shield for easier wiring.
 
