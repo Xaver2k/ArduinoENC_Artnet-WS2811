@@ -47,10 +47,12 @@ This Code is written for Maximum Ram saving and fps, without modifying the libra
 #define CONNECTPIN2 7 // To connect Resistor without external pcb... resistor is bridged from DATAPIN2
 
 EthernetUDP udp;
-uint8_t artnetHeader[ART_DMX_START];
 uint16_t packetSize;
+uint8_t artnetPackage[MAX_BUFFER_ARTNET];
+uint8_t ledData=&artnetPackage[ART_DMX_START];
 
-Adafruit_NeoPixel leds1 = Adafruit_NeoPixel(NUMLEDS, DATAPIN1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel leds1 = Adafruit_NeoPixel(NUMLEDS, DATAPIN1, NEO_GRB + NEO_KHZ800); // TODO: make it useless
+
 
 // Arduino Selection change IPs, MACs and Universe to you needs
  
@@ -95,17 +97,20 @@ void setup()
   #ifdef FPS_COUNTER
   Serial.begin(9600);   // For tests only
   #endif
-  
-  pinMode(CONNECTPIN1, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
-  pinMode(CONNECTPIN2, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
-  digitalWrite(CONNECTPIN1, LOW); // Just for safety, remember the resistor and pcb stuff
-  digitalWrite(CONNECTPIN2, LOW); // Just for safety, remember the resistor and pcb stuff
-  
   Ethernet.begin(mac,ip);
   udp.begin(ART_NET_PORT);
-  leds1.begin();
+
+  // Initialize LED Output Pin
+  pinMode(DATAPIN1, OUTPUT);
+  digitalWrite(DATAPIN1, LOW);
+  pinMode(DATAPIN2, OUTPUT);
+  digitalWrite(DATAPIN2, LOW);
+  pinMode(CONNECTPIN1, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
+  digitalWrite(CONNECTPIN1, LOW); // Just for safety, remember the resistor and pcb stuff
+  pinMode(CONNECTPIN2, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
+  digitalWrite(CONNECTPIN2, LOW); // Just for safety, remember the resistor and pcb stuff
   
-  initTest(); // Light test on Startup
+//  initTest(); // Light test on Startup
 }
 
 void loop()
@@ -114,16 +119,14 @@ void loop()
 
   if (packetSize <= MAX_BUFFER_ARTNET && packetSize > 0)
   {
-      udp.read(artnetHeader, ART_DMX_START);
+      udp.read(artnetPackage, MAX_BUFFER_ARTNET);
 
       // Check that packetID is "Art-Net" else ignore
-      if ( artnetHeader[0] == 'A' && artnetHeader[1] == 'r' && artnetHeader[2] == 't' && artnetHeader[3] == '-' 
-            && artnetHeader[4] == 'N' && artnetHeader[5] == 'e' && artnetHeader[6] == 't') {
-        if ((artnetHeader[8] | artnetHeader[9]) << 8 == ART_DMX)
-        {
-          udp.read(leds1.getPixels(),artnetHeader[17] | artnetHeader[16] << 8); // Size of universe = artnetHeader[17] | artnetHeader[16] << 8
-          
-          switch (artnetHeader[14] | artnetHeader[15] << 8) { // Universe
+      if ( artnetPackage[0] == 'A' && artnetPackage[1] == 'r' && artnetPackage[2] == 't' && artnetPackage[3] == '-' 
+            && artnetPackage[4] == 'N' && artnetPackage[5] == 'e' && artnetPackage[6] == 't') {
+        if ((artnetPackage[8] | artnetPackage[9]) << 8 == ART_DMX)
+        {          
+          switch (artnetPackage[14] | artnetPackage[15] << 8) { // Universe
             case (STARTUNIVERSE):
               leds1.setPin(DATAPIN1);
               break;
@@ -145,7 +148,7 @@ void loop()
   #endif
 }
 
-
+/*
 // LED Testing Pattern
 void initTest()
 {
@@ -177,7 +180,7 @@ void initTest()
   leds1.setPin(DATAPIN2);
   leds1.show();
 }
-
+*/
 
 // Frames per second counter for statistics only
 #ifdef FPS_COUNTER
