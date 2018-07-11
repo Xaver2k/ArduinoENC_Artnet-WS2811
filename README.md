@@ -8,3 +8,4 @@ Remember do not use the Arduino internal Power Supply for Leds supply and add a 
 Changelog
 
 - 2018.05.07  2 Universe Artnet to Ws2811 on 2 Output Pins (1 Universe per Pin)
+- 2018.07.11  trying to make adafruit obsolete to remove as much from the library as possible, still in development!
