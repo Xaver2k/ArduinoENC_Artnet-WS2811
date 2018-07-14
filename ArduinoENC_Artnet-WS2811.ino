@@ -30,7 +30,7 @@ This Code is written for Maximum Ram saving and fps, without modifying the libra
 
 // Ethernet Librarys
 #include <UIPEthernet.h>
-//#include <UIPUdp.h>
+#include <UIPUdp.h>
 
 // Artnet Specific
 #define ART_NET_PORT 6454       // UDP specific
@@ -49,7 +49,7 @@ This Code is written for Maximum Ram saving and fps, without modifying the libra
 #define ARDUINO_NR 1  // Define Arduino Number 1, 2, 3, 4, 5
 
 // Frames per second counter, uncomment for statistics
-#define FPS_COUNTER
+//#define FPS_COUNTER
 
 /*  
  *  To connect Resistors in Data line without external pcb, these Pins are bend away from the shield.
@@ -83,8 +83,8 @@ uint8_t
   #define SECONDUNIVERSE STARTUNIVERSE+1
   #define IPADDRESS (192, 168, 0, 100)
   #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC)
-  //IPAddress ip(192, 168, 0, 100);
-  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC};
+  IPAddress ip(192, 168, 0, 100);
+  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC};
 
 // 2nd Arduino Nano
 #elif ARDUINO_NR == 2
@@ -129,7 +129,9 @@ void setup()
 #ifdef FPS_COUNTER
   Serial.begin(9600);   // For tests only
 #endif
-  Ethernet.begin(MACADDRESS, IPADDRESS);
+  
+  //Ethernet.begin(MACADDRESS, IPADDRESS);
+  Ethernet.begin(mac,ip);
   udp.begin(ART_NET_PORT);
 
   // Initialize LED Output Pin
@@ -142,7 +144,7 @@ void setup()
   pinMode(CONNECTPIN2, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
   digitalWrite(CONNECTPIN2, LOW); // Just for safety, remember the resistor and pcb stuff
 
-  initAdaLeds(NUMLEDS);
+//  initAdaLeds(NUMLEDS);
   
 //  initTest(); // Light test on Startup
 }
@@ -150,11 +152,14 @@ void setup()
 void loop()
 {
   packetSize = udp.parsePacket();
-
+  //Serial.println(packetSize);
+  
   if (packetSize <= MAX_BUFFER_ARTNET && packetSize > 0)
   {
+    Serial.println("test2");
     // read artnet header from packet
     udp.read(artnetPackage, ART_DMX_START);
+    Serial.println("test1");
 
     // Check that packetID is "Art-Net" else ignore
     if ( artnetPackage[0] == 'A' && artnetPackage[1] == 'r' && artnetPackage[2] == 't' && artnetPackage[3] == '-' 
@@ -172,14 +177,18 @@ void loop()
         default: 
           break;
         };
-
+      Serial.println("test0000");
+      for(int i = 0; i < sizeof(pixels); i++)
+      {
+        Serial.println(pixels[i]);
+      }
       ledsShow();
     };
   };
 
   // FPS-Counter for statistics only
   #ifdef FPS_COUNTER
-    fps(5);
+//    fps(5);
   #endif
 }
 
@@ -196,7 +205,7 @@ void initAdaLeds(uint16_t n)
 {
 //  endTime = 0;
   // updateLength n
-  if(pixels) free(pixels); // Free existing data (if any)
+  //if(pixels) free(pixels); // Free existing data (if any)
 
   // Allocate new data -- note: ALL PIXELS ARE CLEARED
   //numBytes = n * 3; // RGB Pixels need 3 Bytes
