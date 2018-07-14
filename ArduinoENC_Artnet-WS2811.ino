@@ -23,30 +23,25 @@ This Code is written for Maximum Ram saving and fps, without modifying the libra
 #define NEO_KHZ400 0x0100 // 400 KHz datastream
 #endif
 
-#ifdef NEO_KHZ400
-typedef uint16_t neoPixelType;
-#else
-typedef uint8_t  neoPixelType;
-#endif
 
 // Arduino Nano with Deek-Robot and ENC28J60 Shield
 
 #include <SPI.h> // Nesseccary for Ethernet Library
-#include <Adafruit_NeoPixel.h> // Library for Led protocol
 
 // Ethernet Librarys
 #include <UIPEthernet.h>
-#include <UIPUdp.h>
+//#include <UIPUdp.h>
 
 // Artnet Specific
 #define ART_NET_PORT 6454       // UDP specific
 #define ART_DMX 0x5000          // Opcode Artnet DMX Paket
 #define MAX_BUFFER_ARTNET 530   // Artnet Buffer Size
-#define ART_NET_ID "Art-Net\0"  // Artnet Paket ID
-#define ART_DMX_START 18        // Artnet LED Offset
+//#define ART_NET_ID "Art-Net\0"  // Artnet Paket ID
+#define ART_DMX_START 18        // Artnet Header and LED Offset
 
 // Led Data
-#define NUMLEDS 171 // Number of LEDs per Universe/Output + 18 Byte Artnet Header
+#define NUMLEDS 171 // Number of LEDs per Universe/Output
+#define NUMBYTES 513 // Number of Leds multiplied by Pixelsize RGB=3
 #define DATAPIN1 2  // Output Pin 1th Universe
 #define DATAPIN2 4  // Output Pin 2nd Universe
 
@@ -54,7 +49,7 @@ typedef uint8_t  neoPixelType;
 #define ARDUINO_NR 1  // Define Arduino Number 1, 2, 3, 4, 5
 
 // Frames per second counter, uncomment for statistics
-//#define FPS_COUNTER
+#define FPS_COUNTER
 
 /*  
  *  To connect Resistors in Data line without external pcb, these Pins are bend away from the shield.
@@ -66,20 +61,16 @@ typedef uint8_t  neoPixelType;
 
 EthernetUDP udp;
 uint16_t packetSize;
-uint8_t artnetPackage[MAX_BUFFER_ARTNET];
-uint8_t ledData=&artnetPackage[ART_DMX_START];
+uint8_t artnetPackage[ART_DMX_START];
 
-//Adafruit_NeoPixel leds1 = Adafruit_NeoPixel(NUMLEDS, DATAPIN1, NEO_GRB + NEO_KHZ800); // TODO: make it useless
 boolean
 #ifdef NEO_KHZ400  // If 400 KHz NeoPixel support enabled...
     is800KHz = true;      // ...true if 800 KHz pixels
 #endif
 uint8_t
-   *pixels,
+   pixels[NUMBYTES],
    outputPin;
-uint16_t
-    numLEDs,      // Number of RGB LEDs in strip
-    numBytes;     // Size of 'pixels' buffer below (3 or 4 bytes/pixel)
+   
 //uint32_t endTime;   
 
     
@@ -90,45 +81,55 @@ uint16_t
 #if ARDUINO_NR == 1
   #define STARTUNIVERSE 0
   #define SECONDUNIVERSE STARTUNIVERSE+1
-  IPAddress ip(192, 168, 0, 100);
-  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC};
+  #define IPADDRESS (192, 168, 0, 100)
+  #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC)
+  //IPAddress ip(192, 168, 0, 100);
+  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x00, 0xEC};
 
 // 2nd Arduino Nano
 #elif ARDUINO_NR == 2
   #define STARTUNIVERSE 2
   #define SECONDUNIVERSE STARTUNIVERSE+1
-  IPAddress ip(192, 168, 0, 102);
-  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x02, 0xEC};
+  #define IPADDRESS (192, 168, 0, 102)
+  #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x02, 0xEC)
+  //IPAddress ip(192, 168, 0, 102);
+  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x02, 0xEC};
 
 // 3th Arduino Nano
 #elif ARDUINO_NR == 3
   #define STARTUNIVERSE 4
   #define SECONDUNIVERSE STARTUNIVERSE+1
-  IPAddress ip(192, 168, 0, 104);
-  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x04, 0xEC};
+  #define IPADDRESS (192, 168, 0, 104)
+  #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x04, 0xEC)
+  //IPAddress ip(192, 168, 0, 104);
+  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x04, 0xEC};
 
 // 4th Arduino Nano
 #elif ARDUINO_NR == 4
   #define STARTUNIVERSE 6
   #define SECONDUNIVERSE STARTUNIVERSE+1
-  IPAddress ip(192, 168, 0, 106);
-  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x06, 0xEC};
+  #define IPADDRESS (192, 168, 0, 106)
+  #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x06, 0xEC)
+  //IPAddress ip(192, 168, 0, 106);
+  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x06, 0xEC};
  
 // 5th Arduino Nano
 #elif ARDUINO_NR == 5
   #define STARTUNIVERSE 8
   #define SECONDUNIVERSE STARTUNIVERSE+1
-  IPAddress ip(192, 168, 0, 108);
-  byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x08, 0xEC};
+  #define IPADDRESS (192, 168, 0, 108)
+  #define MACADDRESS (0x04, 0xE9, 0xE5, 0x00, 0x08, 0xEC)
+  //IPAddress ip(192, 168, 0, 108);
+  //byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x08, 0xEC};
 #endif
 
 
 void setup()
 {
-  #ifdef FPS_COUNTER
+#ifdef FPS_COUNTER
   Serial.begin(9600);   // For tests only
-  #endif
-  Ethernet.begin(mac,ip);
+#endif
+  Ethernet.begin(MACADDRESS, IPADDRESS);
   udp.begin(ART_NET_PORT);
 
   // Initialize LED Output Pin
@@ -152,28 +153,29 @@ void loop()
 
   if (packetSize <= MAX_BUFFER_ARTNET && packetSize > 0)
   {
-      udp.read(artnetPackage, MAX_BUFFER_ARTNET);
+    // read artnet header from packet
+    udp.read(artnetPackage, ART_DMX_START);
 
-      // Check that packetID is "Art-Net" else ignore
-      if ( artnetPackage[0] == 'A' && artnetPackage[1] == 'r' && artnetPackage[2] == 't' && artnetPackage[3] == '-' 
-            && artnetPackage[4] == 'N' && artnetPackage[5] == 'e' && artnetPackage[6] == 't') {
-        if ((artnetPackage[8] | artnetPackage[9]) << 8 == ART_DMX)
-        {          
-          switch (artnetPackage[14] | artnetPackage[15] << 8) { // Universe
-            case (STARTUNIVERSE):
-              setPin(DATAPIN1);
-              break;
-            case (SECONDUNIVERSE):
-              setPin(DATAPIN2);
-              break;
-            default: 
-              break;
-            }     
-
-          ledsShow();
+    // Check that packetID is "Art-Net" else ignore
+    if ( artnetPackage[0] == 'A' && artnetPackage[1] == 'r' && artnetPackage[2] == 't' && artnetPackage[3] == '-' 
+          && artnetPackage[4] == 'N' && artnetPackage[5] == 'e' && artnetPackage[6] == 't' 
+          && (artnetPackage[8] | artnetPackage[9]) << 8 == ART_DMX) 
+    {
+      udp.read(pixels , artnetPackage[17] | artnetPackage[16] << 8);
+      switch (artnetPackage[14] | artnetPackage[15] << 8) { // Universe
+        case (STARTUNIVERSE):
+          setPin(DATAPIN1);
+          break;
+        case (SECONDUNIVERSE):
+          setPin(DATAPIN2);
+          break;
+        default: 
+          break;
         };
-      }
-  }
+
+      ledsShow();
+    };
+  };
 
   // FPS-Counter for statistics only
   #ifdef FPS_COUNTER
@@ -197,13 +199,10 @@ void initAdaLeds(uint16_t n)
   if(pixels) free(pixels); // Free existing data (if any)
 
   // Allocate new data -- note: ALL PIXELS ARE CLEARED
-  numBytes = n * 3; // RGB Pixels need 3 Bytes
-  if((pixels = (uint8_t *)malloc(numBytes))) {
-    memset(pixels, 0, numBytes);
-    numLEDs = n;
-  } else {
-    numLEDs = numBytes = 0;
-  }
+  //numBytes = n * 3; // RGB Pixels need 3 Bytes
+  //if((pixels = (uint8_t *)malloc(NUMBYTES))) {
+  //  memset(pixels, 0, NUMBYTES);
+  //}
 }
 
 void setPin(uint8_t p) {
@@ -226,7 +225,7 @@ void ledsShow()
 // AVR MCUs -- ATmega & ATtiny (no XMEGA) ---------------------------------
 
   volatile uint16_t
-    i   = numBytes; // Loop counter
+    i   = NUMBYTES; // Loop counter
   volatile uint8_t
    *ptr = pixels,   // Pointer to next byte
     b   = *ptr++,   // Current byte value
@@ -1140,7 +1139,7 @@ void ledsShow()
 #define CYCLES_400      (F_CPU /  400000)
 
   uint8_t          *p   = pixels,
-                   *end = p + numBytes, pix, mask;
+                   *end = p + NUMBYTES, pix, mask;
   volatile uint8_t *set = portSetRegister(outputPin),
                    *clr = portClearRegister(outputPin);
   uint32_t          cyc;
@@ -1195,7 +1194,7 @@ void ledsShow()
        pix, count, dly,
                    bitmask = digitalPinToBitMask(outputPin);
   volatile uint8_t *reg = portSetRegister(outputPin);
-  uint32_t         num = numBytes;
+  uint32_t         num = NUMBYTES;
   asm volatile(
   "L%=_begin:"        "\n\t"
   "ldrb %[pix], [%[p], #0]"   "\n\t"
@@ -1285,7 +1284,7 @@ void ledsShow()
   portNum =  g_APinDescription[outputPin].ulPort;
   pinMask =  1ul << g_APinDescription[outputPin].ulPin;
   ptr     =  pixels;
-  end     =  ptr + numBytes;
+  end     =  ptr + NUMBYTES;
   p       = *ptr++;
   bitMask =  0x80;
 
@@ -1360,7 +1359,7 @@ void ledsShow()
 
   pinMask =  BIT(PIN_MAP[outputPin].gpio_bit);
   ptr     =  pixels;
-  end     =  ptr + numBytes;
+  end     =  ptr + NUMBYTES;
   p       = *ptr++;
   bitMask =  0x80;
 
@@ -1461,7 +1460,7 @@ void ledsShow()
   timeValue = &(TC1->TC_CHANNEL[0].TC_CV);  // the initial 'while'.
   timeReset = &(TC1->TC_CHANNEL[0].TC_CCR);
   p         =  pixels;
-  end       =  p + numBytes;
+  end       =  p + NUMBYTES;
   pix       = *p++;
   mask      = 0x80;
 
@@ -1505,7 +1504,7 @@ void ledsShow()
 // ESP8266 ----------------------------------------------------------------
 
   // ESP8266 show() is external to enforce ICACHE_RAM_ATTR execution
-  espShow(outputPin, pixels, numBytes, is800KHz);
+  espShow(outputPin, pixels, NUMBYTES, is800KHz);
 
 #elif defined(__ARDUINO_ARC__)
 
@@ -1517,7 +1516,7 @@ void ledsShow()
   __builtin_arc_nop(); __builtin_arc_nop(); }
 
   PinDescription *pindesc = &g_APinDescription[outputPin];
-  register uint32_t loop = 8 * numBytes; // one loop to handle all bytes and all bits
+  register uint32_t loop = 8 * NUMBYTES; // one loop to handle all bytes and all bits
   register uint8_t *p = pixels;
   register uint32_t currByte = (uint32_t) (*p);
   register uint32_t currBit = 0x80 & currByte;
@@ -1610,20 +1609,6 @@ void ledsShow()
   interrupts();
 //  endTime = micros(); // Save EOD time for latch on next call
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
