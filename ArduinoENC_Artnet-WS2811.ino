@@ -3,18 +3,20 @@ This Project will receive multiple universes via Artnet and control a strip of w
 Adafruit's NeoPixel library: https://github.com/adafruit/Adafruit_NeoPixel
 This example may be copied under the terms of the MIT license, see the LICENSE file for details
 
+// Arduino Nano with Deek-Robot Screw Terminal and ENC28J60 Ethernet Shield
+
 Components per unit
 1x Arduino Nano 
 1x Deek-Robot Screw Terminal shield 
 1x ENC28J60 for Nano Shield
 
-This Code is written for Maximum Ram saving and fps, without modifying the libraries!!
+This Code is written for Maximum FPS and Ram saving, some tweeks are still in progress!!
 */
 
 // Arduino Nano with Deek-Robot and ENC28J60 Shield
 
 #include <SPI.h> // Nesseccary for Ethernet Library
-#include <Adafruit_NeoPixel.h> // Library for Led protocol
+#include "src/Mod_Adafruit_NeoPixel/Adafruit_NeoPixel.h" // Library for Led protocol
 
 // Ethernet Librarys
 #include <UIPEthernet.h>
@@ -40,7 +42,7 @@ This Code is written for Maximum Ram saving and fps, without modifying the libra
 
 /*  
  *  To connect Resistors in Data line without external pcb, these Pins are bend away from the shield.
- *  On the Screw terminal Shield these Pins are connected to the other end of the Resistors.
+ *  On the Screw terminal Shield these Pins are connected to the other end of the Resistor.
  *  !!Important check they are not connected to the Arduino, high risk of short-circuit!!
 */
 #define CONNECTPIN1 5 // To connect Resistor without external pcb... resistor is bridged from DATAPIN1
@@ -50,6 +52,7 @@ EthernetUDP udp;
 uint8_t artnetHeader[ART_DMX_START];
 uint16_t packetSize;
 
+// Neopixel Initialization
 Adafruit_NeoPixel leds1 = Adafruit_NeoPixel(NUMLEDS, DATAPIN1, NEO_GRB + NEO_KHZ800);
 
 // Arduino Selection change IPs, MACs and Universe to you needs
@@ -93,13 +96,17 @@ Adafruit_NeoPixel leds1 = Adafruit_NeoPixel(NUMLEDS, DATAPIN1, NEO_GRB + NEO_KHZ
 void setup()
 {
   #ifdef FPS_COUNTER
-  Serial.begin(9600);   // For tests only
+  Serial.begin(9600);   // For statistics only
   #endif
-  
+
+  #ifdef CONNECTPIN1
   pinMode(CONNECTPIN1, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
-  pinMode(CONNECTPIN2, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
   digitalWrite(CONNECTPIN1, LOW); // Just for safety, remember the resistor and pcb stuff
+  #endif
+  #ifdef CONNECTPIN2
+  pinMode(CONNECTPIN2, OUTPUT);   // Just for safety, remember the resistor and pcb stuff
   digitalWrite(CONNECTPIN2, LOW); // Just for safety, remember the resistor and pcb stuff
+  #endif
   
   Ethernet.begin(mac,ip);
   udp.begin(ART_NET_PORT);
